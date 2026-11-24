@@ -1,0 +1,80 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+public class banking {
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter Sender ID: ");
+        int sender = sc.nextInt();
+
+        System.out.print("Enter Receiver ID: ");
+        int receiver = sc.nextInt();
+
+        System.out.print("Enter Amount: ");
+        double amount = sc.nextDouble();
+               String username="root";
+   String password="Leena@1234";
+   String url="jdbc:mysql://localhost:3306/bank_db";
+
+try {
+       Connection con=DriverManager.getConnection(url,username,password);
+      con.setAutoCommit(false);
+     
+    
+    // System.out.println(con.getMetaData().getDatabaseProductName());
+ 
+
+ // Debit amount
+            String q1 = "UPDATE accounts SET balance=balance-? WHERE account_id=? AND balance>=?";
+            PreparedStatement ps1 = con.prepareStatement(q1);
+
+            ps1.setDouble(1, amount);
+            ps1.setInt(2, sender);
+            ps1.setDouble(3, amount);
+
+            int r1 = ps1.executeUpdate();
+
+            if (r1 == 0) {
+                throw new SQLException("Insufficient balance or sender not found");
+            }
+
+// Credit amount
+            String q2 = "UPDATE accounts SET balance=balance+? WHERE account_id=?";
+            PreparedStatement ps2 = con.prepareStatement(q2);
+
+            ps2.setDouble(1, amount);
+            ps2.setInt(2, receiver);
+
+            int r2 = ps2.executeUpdate();
+            if (r2 == 0) {
+                throw new SQLException("Receiver not found");
+            }
+
+// Insert transaction history
+           String q3 = "INSERT INTO transaction_history(sender_id, receiver_id, amount) VALUES(?,?,?)";
+            PreparedStatement ps3 = con.prepareStatement(q3);
+
+            ps3.setInt(1, sender);
+            ps3.setInt(2, receiver);
+            ps3.setDouble(3, amount);
+            ps3.executeUpdate();
+
+            // Save transaction
+            con.commit();
+            con.rollback();
+
+            System.out.println("Transaction Successful!");
+
+           
+      con.close();
+   } catch (SQLException e) {
+
+    e.printStackTrace();
+   }
+    }
+}
